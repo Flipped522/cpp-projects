@@ -1,50 +1,78 @@
-# Prerequisites
-*.d
-
-# Compiled Object files
-*.slo
-*.lo
+# =========================
+# Compiled Object Files
+# =========================
 *.o
 *.obj
+*.lo
+*.slo
 
+# =========================
 # Precompiled Headers
+# =========================
 *.gch
 *.pch
+*.ipch
 
-# Linker files
-*.ilk
-
-# Debugger Files
-*.pdb
-
-# Compiled Dynamic libraries
-*.so
-*.dylib
-*.dll
-*.so.*
-
-
-# Fortran module files
-*.mod
-*.smod
-
-# Compiled Static libraries
-*.lai
-*.la
+# =========================
+# Static / Dynamic Libraries
+# =========================
 *.a
 *.lib
+*.la
+*.lai
+*.so
+*.so.*
+*.dll
+*.dylib
 
+# =========================
 # Executables
+# =========================
 *.exe
 *.out
 *.app
+*.swf
+*.air
+*.ipa
+*.apk
 
-# Build directories
+# =========================
+# Debug / Build Directories
+# =========================
+Debug/
+Release/
 build/
 Build/
 build-*/
+bin-debug/
+bin-release/
+[Bb]in/
+[Oo]bj/
+x64/
+x86/
 
-# CMake generated files
+# =========================
+# Visual Studio
+# =========================
+.vs/
+*.suo
+*.user
+*.db
+*.VC.db
+*.VC.opendb
+*.ilk
+*.pdb
+
+# Solution / Project Files
+# 如果你想保留 VS 工程文件，就删掉下面三行
+# =========================
+# *.sln
+# *.vcxproj
+# *.filters
+
+# =========================
+# CMake
+# =========================
 CMakeFiles/
 CMakeCache.txt
 cmake_install.cmake
@@ -52,21 +80,26 @@ Makefile
 install_manifest.txt
 compile_commands.json
 
-# Temporary files
+# =========================
+# Temporary / Cache Files
+# =========================
 *.tmp
 *.log
 *.bak
 *.swp
+.cache/
+Testing/
 
+# =========================
 # vcpkg
+# =========================
 vcpkg_installed/
 
-# debug information files
+# =========================
+# Misc
+# =========================
+*.d
 *.dwo
-
-# test output & cache
-Testing/
-.cache/
-
-# Visual Studio
-.vs/
+*.mod
+*.smod
+.settings/
