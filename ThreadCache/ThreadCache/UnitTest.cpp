@@ -1,1 +1,36 @@
 #define _CRT_SECURE_NO_WARNINGS 1 
+
+#include "ObjectPool.h"
+#include "ConcurrentAlloc.h"
+
+void Alloc1()
+{
+	for (size_t i = 0; i < 5; i++)
+	{
+		void* ptr = ConcurentAlloc(6);
+	}
+}
+
+void Alloc2()
+{
+	for (size_t i = 0; i < 5; i++)
+	{
+		void* ptr = ConcurentAlloc(6);
+	}
+}
+
+void TLSTest()
+{
+	std::thread t1(Alloc1);
+	t1.join();
+
+	std::thread t2(Alloc2);
+	t2.join();
+}
+
+int main()
+{
+	TLSTest();
+
+	return 0;
+}
