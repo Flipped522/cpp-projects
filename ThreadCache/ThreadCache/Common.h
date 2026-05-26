@@ -5,6 +5,7 @@
 #include <time.h>
 #include <thread>
 #include <assert.h>
+#include <mutex>
 using std::cout;
 using std::endl;
 
@@ -18,6 +19,13 @@ static void*& NextObj(void* obj)
 	return *(void**)obj;
 }
 
+#ifdef  _WIN64
+	typedef unsigned long long PAGE_ID;
+#elif _WIN32
+	typedef size_t PAGE_ID;
+#elif
+	// linux
+#endif
 // 管理切分的自由链表
 class FreeList
 {
@@ -158,5 +166,36 @@ public:
 		return -1;
 	}
 
+	// 一次thread cache从中心缓存获取多少个
+	static size_t NumMoveSize(size_t size)
+	{
+		assert(size);
 
+		int num = MAX_BYTES / size;
+		if (num < 2)	num = 2;
+		if (num > 512) num = 512;
+
+		return num;
+	}
+};
+
+// 管理多个连续页大块内存跨度结构
+struct Span
+{
+	PAGE_ID _pageId = 0; // 大块内存的起始页的页号
+	size_t _n = 0;		 // 页的数量
+
+	Span* _next = nullptr;
+	Span* _prev = nullptr;
+
+	size_t _usecount = 0;// 切好的小块内存，被分配给thread cache的计数
+	void* _freeList = nullptr; // 切好的小块内存的自由链表
+};
+
+class SpanList
+{
+private:
+	Span* _head;
+public:
+	std::mutex _mtx; // 桶锁
 };
