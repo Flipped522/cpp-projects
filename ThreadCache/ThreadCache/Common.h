@@ -32,24 +32,41 @@ class FreeList
 public:
 	void Push(void* obj)
 	{
-		NextObj(obj) = _freelist;
-		_freelist = obj;
+		assert(obj != nullptr);
+
+		NextObj(obj) = _freeList;
+		_freeList = obj;
+	}
+
+	void PushRange(void* start, void* end)
+	{
+		NextObj(end) = _freeList;
+		_freeList = start;
 	}
 
 	void* Pop()
 	{
-		assert(_freelist);
-		void* obj = _freelist;
-		_freelist = NextObj(obj);
+		assert(_freeList);
+
+		// 头删
+		void* obj = _freeList;
+		_freeList = NextObj(obj);
+
 		return obj;
 	}
 
 	bool Empty()
 	{
-		return _freelist == nullptr;
+		return _freeList == nullptr;
+	}
+
+	size_t& MaxSize()
+	{
+		return _maxSize;
 	}
 private:
-	void* _freelist = nullptr;
+	void* _freeList = nullptr;
+	size_t _maxSize = 1;
 };
 
 class SizeClass
@@ -169,11 +186,13 @@ public:
 	// 一次thread cache从中心缓存获取多少个
 	static size_t NumMoveSize(size_t size)
 	{
-		assert(size);
+		assert(size > 0);
 
 		int num = MAX_BYTES / size;
-		if (num < 2)	num = 2;
-		if (num > 512) num = 512;
+		if (num < 2)	
+			num = 2;
+		if (num > 512) 
+			num = 512;
 
 		return num;
 	}
@@ -194,6 +213,37 @@ struct Span
 
 class SpanList
 {
+public:
+	SpanList()
+	{
+		_head = new Span;
+		_head->_prev = _head;
+		_head->_next = _head;
+	}
+
+	void Insert(Span* pos, Span* newSpan)
+	{
+		assert(pos);
+		assert(newSpan);
+
+		Span* prev = pos->_prev;
+		prev->_next = newSpan;
+		newSpan->_prev = prev;
+		newSpan->_next = pos;
+		pos->_prev = newSpan;
+	}
+
+	void Erase(Span* pos)
+	{
+		assert(pos);
+		assert(pos != _head);
+
+		Span* prev = pos->_prev;
+		Span* next = pos->_next;
+		prev->_next = next;
+		next->_prev = prev;
+	}
+
 private:
 	Span* _head;
 public:
