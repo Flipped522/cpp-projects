@@ -5,7 +5,7 @@
 void* ThreadCache::FetchFromCentralCache(size_t index, size_t size)
 {
 	// 慢开始反馈调节算法
-	size_t batchNum = std::min(_freeLists[index].MaxSize(), SizeClass::NumMoveSize(size));
+	size_t batchNum = min(_freeLists[index].MaxSize(), SizeClass::NumMoveSize(size));
 	if (batchNum == _freeLists[index].MaxSize())
 	{
 		_freeLists[index].MaxSize() += 1;

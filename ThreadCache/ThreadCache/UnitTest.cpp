@@ -28,9 +28,23 @@ void TLSTest()
 	t2.join();
 }
 
+void TestConcurrentAlloc1()
+{
+	void* p1 = ConcurentAlloc(6);
+	void* p2 = ConcurentAlloc(8);
+	void* p3 = ConcurentAlloc(1);
+	void* p4 = ConcurentAlloc(7);
+	void* p5 = ConcurentAlloc(8);
+
+	cout << p1 << endl;
+	cout << p2 << endl;
+	cout << p3 << endl;
+	cout << p4 << endl;
+}
+
 int main()
 {
-	TLSTest();
+	TestConcurrentAlloc1();
 
 	return 0;
 }

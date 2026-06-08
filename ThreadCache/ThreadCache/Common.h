@@ -1,4 +1,5 @@
 #define _CRT_SECURE_NO_WARNINGS 1 
+#pragma once
 #include <iostream>
 #include <assert.h>
 #include <vector>
@@ -9,23 +10,45 @@
 using std::cout;
 using std::endl;
 
-#pragma once
+#ifdef _WIN32
+#include<windows.h>
+#else
+	// linux
+#endif
 
 static const size_t MAX_BYTES = 256 * 1024;
 static const size_t NFREELIST = 208;
+static const size_t NPAGES = 129;
+static const size_t PAGE_SHIFT = 13;
+
+#ifdef  _WIN64
+typedef unsigned long long PAGE_ID;
+#elif _WIN32
+typedef size_t PAGE_ID;
+#elif
+// linux
+#endif
+
+// 直接去堆上按页申请空间
+inline static void* SystemAlloc(size_t kpage)
+{
+#ifdef _WIN32
+	void* ptr = VirtualAlloc(0, kpage << 13, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+#else
+	// linux下brk mmap等
+#endif
+
+	if (ptr == nullptr)
+		throw std::bad_alloc();
+
+	return ptr;
+}
 
 static void*& NextObj(void* obj)
 {
 	return *(void**)obj;
 }
 
-#ifdef  _WIN64
-	typedef unsigned long long PAGE_ID;
-#elif _WIN32
-	typedef size_t PAGE_ID;
-#elif
-	// linux
-#endif
 // 管理切分的自由链表
 class FreeList
 {
@@ -196,6 +219,19 @@ public:
 
 		return num;
 	}
+
+	// 计算一次向系统获取几个页
+	static size_t NumMovePage(size_t size)
+	{
+		size_t num = NumMoveSize(size);
+		size_t npage = num * size;
+
+		npage >>= PAGE_SHIFT;
+		if (npage == 0)
+			npage = 1;
+
+		return npage;
+	}
 };
 
 // 管理多个连续页大块内存跨度结构
@@ -211,6 +247,7 @@ struct Span
 	void* _freeList = nullptr; // 切好的小块内存的自由链表
 };
 
+// 带头双向循环链表
 class SpanList
 {
 public:
@@ -219,6 +256,21 @@ public:
 		_head = new Span;
 		_head->_prev = _head;
 		_head->_next = _head;
+	}
+
+	Span* Begin()
+	{
+		return _head->_next;
+	}
+
+	Span* End()
+	{
+		return _head;
+	}
+
+	bool Empty()
+	{
+		return _head->_next == _head;
 	}
 
 	void Insert(Span* pos, Span* newSpan)
@@ -233,6 +285,11 @@ public:
 		pos->_prev = newSpan;
 	}
 
+	void PushFront(Span* span)
+	{
+		Insert(Begin(), span);
+	}
+
 	void Erase(Span* pos)
 	{
 		assert(pos);
@@ -242,6 +299,13 @@ public:
 		Span* next = pos->_next;
 		prev->_next = next;
 		next->_prev = prev;
+	}
+
+	Span* PopFront()
+	{
+		Span* front = _head->_next;
+		Erase(front);
+		return front;
 	}
 
 private:

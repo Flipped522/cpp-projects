@@ -1,31 +1,10 @@
 #define _CRT_SECURE_NO_WARNINGS 1 
 #include "Common.h"
 
-#ifdef _WIN32
-#include<windows.h>
-#else
-// 
-#endif
-
 // 定长内存池
 //template<size_t N>
 //class ObjectPool
 //{};
-
-// 直接去堆上按页申请空间
-inline static void* SystemAlloc(size_t kpage)
-{
-#ifdef _WIN32
-	void* ptr = VirtualAlloc(0, kpage << 13, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
-#else
-	// linux下brk mmap等
-#endif
-
-	if (ptr == nullptr)
-		throw std::bad_alloc();
-
-	return ptr;
-}
 
 template<class T>
 class ObjectPool
