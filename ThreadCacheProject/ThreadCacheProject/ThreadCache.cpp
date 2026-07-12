@@ -21,4 +21,15 @@ void* ThreadCache::Allocate(size_t size)
 
 void ThreadCache::Dellocate(void* ptr, size_t size)
 {
+	assert(size <= MAX_BYTES);
+	assert(nullptr != ptr);
+
+	// 找出对应的映射的自由链表的桶并插入
+	size_t index = SizeClass::Index(size);
+	_freeLists[index].Push(ptr);
+}
+
+void* ThreadCache::FetchFromCentralCache(size_t index, size_t size)
+{
+	return nullptr;
 }

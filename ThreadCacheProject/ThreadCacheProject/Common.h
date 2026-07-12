@@ -4,14 +4,24 @@
 #include <iostream>
 #include <vector>
 #include <time.h>
+#include <thread>
+#include <mutex>
 #include <cassert>
 using std::cout;
 using std::endl;
 
 static const size_t MAX_BYTES = 256 * 1024;
-static const size_t NFREE_LISTS = 208;
+static const size_t NFREELISTS = 208;
 
-void*& NextObj(void* obj)
+#ifdef _WIN64
+	typedef unsigned long long PAGE_ID;
+#elif _WIN32
+	typedef size_t PAGE_ID;
+#else
+	// Linux
+#endif
+
+static void*& NextObj(void* obj)
 {
 	return *(void**)obj;
 }
@@ -33,6 +43,7 @@ public:
 		// 头删
 		void* obj = _freeList;
 		_freeList = NextObj(obj);
+		return obj;
 	}
 
 	bool Empty()
@@ -122,4 +133,56 @@ public:
 		}
 		return -1;
 	}
+};
+
+// 管理多个连续页大块内存跨度结构
+struct Span
+{
+	PAGE_ID _page_Id = 0; // 大块内存起始页的页号
+	size_t _n = 0;		  // 页的数量
+
+	Span* _next = nullptr;	  // 双向链表结构
+	Span* _prev = nullptr;	  
+
+	size_t _usecount = 0; // 切好的小块内存，被分配给thread cache的计数
+	void* _freeList = nullptr;  // 切好的小块内存的自由链表
+};
+
+// 带头双向循环链表
+class SpanList
+{
+public:
+	SpanList()
+	{
+		_head = new Span;
+		_head->_next = _head;
+		_head->_prev = _head;
+	}
+
+	void Insert(Span* pos, Span* newSpan)
+	{
+		assert(nullptr != pos);
+		assert(nullptr != newSpan);
+
+		Span* prev = pos->_prev;
+		prev->_next = newSpan;
+		newSpan->_prev = prev;
+		newSpan->_next = pos;
+		pos->_prev = newSpan;
+	}
+
+	void Erase(Span* pos)
+	{
+		assert(nullptr != pos);
+		assert(_head != pos);
+
+		Span* prev = pos->_prev;
+		Span* next = pos->_next;
+
+		prev->_next = next;
+		next->_prev = prev;
+	}
+private:
+	Span* _head;
+	std::mutex _mtx; // 桶锁
 };

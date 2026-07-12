@@ -13,5 +13,8 @@ public:
 	// 从中心缓存获取对象
 	void* FetchFromCentralCache(size_t index, size_t size);
 private:
-	FreeList _freeLists[NFREE_LISTS];
+	FreeList _freeLists[NFREELISTS];
 };
+
+// TLS
+static _declspec(thread) ThreadCache* pTLSThreadCache = nullptr;
