@@ -12,6 +12,7 @@ using std::endl;
 
 static const size_t MAX_BYTES = 256 * 1024;
 static const size_t NFREELISTS = 208;
+static const size_t NPAGES = 128;
 
 #ifdef _WIN64
 	typedef unsigned long long PAGE_ID;
@@ -30,6 +31,12 @@ static void*& NextObj(void* obj)
 class FreeList
 {
 public:
+	void PushRange(void* start, void* end)
+	{
+		NextObj(end) = nullptr;
+		_freeList = start;
+	}
+
 	void Push(void* obj)
 	{
 		// 头插
@@ -50,8 +57,14 @@ public:
 	{
 		return nullptr == _freeList;
 	}
+
+	size_t& MaxSize()
+	{
+		return _maxSize;
+	}
 private:
 	void* _freeList = nullptr;
+	size_t _maxSize = 1;
 };
 
 // 计算对象大小的对齐映射规则
@@ -133,6 +146,19 @@ public:
 		}
 		return -1;
 	}
+	static size_t NumMoveSize(size_t size)
+	{
+		if (size == 0)
+			return 0;
+
+		int num = MAX_BYTES / size;
+		if (num < 2)
+			num = 2;
+		if (num > 512)
+			num = 512;
+
+		return num;
+	}
 };
 
 // 管理多个连续页大块内存跨度结构
@@ -182,7 +208,8 @@ public:
 		prev->_next = next;
 		next->_prev = prev;
 	}
+public:
+	std::mutex _mtx; // 桶锁
 private:
 	Span* _head;
-	std::mutex _mtx; // 桶锁
 };
