@@ -5,7 +5,7 @@
 #include "util.hpp"
 
 // 一个目录，存放所有的html
-const std::string src_path = "data/input/";
+const std::string src_path = "data/input";
 const std::string out_put = "data/raw_html/raw.txt";
 
 typedef struct DocInfo
@@ -76,7 +76,7 @@ bool EnumFile(const std::string &src_path, std::vector<std::string> *files_list)
         {
             continue;
         }
-        std::cout << "debug " << iter->path().string() << std::endl;
+        // std::cout << "debug " << iter->path().string() << std::endl;
         // 当前路径是以.html结束的普通网页文件，将所有.html文件保存到filelist中，方便后续进行文本分析
         files_list->push_back(iter->path().string());
     }
@@ -85,17 +85,77 @@ bool EnumFile(const std::string &src_path, std::vector<std::string> *files_list)
 
 static bool ParseTitle(const std::string &file, std::string *title)
 {
+    size_t begin = file.find("<title>");
+    if(std::string::npos == begin)
+    {
+        return false;
+    }
+    size_t end = file.find("</title>");
+    if(std::string::npos == end)
+    {
+        return false;
+    }
+    begin += std::string("<title>").size();
+
+    if(begin > end)
+    {
+        return false;
+    }
+    *title = file.substr(begin, end - begin);
+
     return true;
 }
 
 static bool ParseContent(const std::string &file, std::string *content)
 {
+    // 状态机
+    enum status{
+        LABEL,
+        CONTENT
+    }; 
+
+    enum status s = LABEL;
+    for(char c : file)
+    {
+        switch(s)
+        {
+            // 只要到了'>',说明当前的标签处理完毕
+            case LABEL:
+            if(c == '>')
+                s = CONTENT;
+            break;
+            case CONTENT:
+            if(c == '<')    // 只要碰到了'<',说明新的标签开始了
+                s = LABEL;
+            else
+            {
+                // 不保留原始文件的\n,\n作为html解析后的文本的分隔符
+                if(c == '\n')
+                    c = ' ';
+                content->push_back(c);
+            }
+            break;
+            default:
+            break;
+        }
+    }
     return true;
 }
 
-static bool ParseUrl()
+static bool ParseUrl(const std::string& file_path, std::string *url)
 {
+    std::string url_head = "https://www.boost.org/doc/libs/1_78_0/doc/html";
+    std::string url_tail = file_path.substr(src_path.size());
+    *url = url_head + url_tail;
+
     return true;
+}
+
+void showDoc(DocInfo_t &doc)
+{
+    std::cout << "title: "<< doc.title << std::endl;
+    std::cout << "content: " << doc.content << std::endl;
+    std::cout << "url: " << doc.url << std::endl;
 }
 
 bool ParseHtml(const std::vector<std::string> &files_list, std::vector<DocInfo_t> *results)
@@ -120,12 +180,16 @@ bool ParseHtml(const std::vector<std::string> &files_list, std::vector<DocInfo_t
             continue;
         }
         // 解析指定的文件路径，构建url
-        if (!ParseUrl())
+        if (!ParseUrl(file, &(doc.url)))
         {
             continue;
         }
 
         results->push_back(doc);
+
+        // fordebug
+        showDoc(doc);
+        break;
     }
     return true;
 }
