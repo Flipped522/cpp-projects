@@ -13,6 +13,7 @@ using std::endl;
 static const size_t MAX_BYTES = 256 * 1024;
 static const size_t NFREELISTS = 208;
 static const size_t NPAGES = 128;
+static const size_t PAGE_SHIFT = 13;
 
 #ifdef _WIN64
 	typedef unsigned long long PAGE_ID;
@@ -159,6 +160,18 @@ public:
 
 		return num;
 	}
+
+	static size_t NumMovePage(size_t size)
+	{
+		size_t num = NumMoveSize(size);
+		size_t npage = num * size;
+
+		npage >>= PAGE_SHIFT;
+		if (0 == npage)
+			npage = 1;
+
+		return npage;
+	}
 };
 
 // 管理多个连续页大块内存跨度结构
@@ -183,6 +196,21 @@ public:
 		_head = new Span;
 		_head->_next = _head;
 		_head->_prev = _head;
+	}
+
+	Span* Begin()
+	{
+		return _head->_next;
+	}
+
+	Span* End()
+	{
+		return _head;
+	}
+
+	void PushFront(Span* span)
+	{
+		Insert(Begin(), span);
 	}
 
 	void Insert(Span* pos, Span* newSpan)

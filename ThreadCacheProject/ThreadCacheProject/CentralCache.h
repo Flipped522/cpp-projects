@@ -16,7 +16,7 @@ public:
 	}
 
 	// 获取一个非空的Span
-	Span* GetOneSpan(SpanList& list, size_t byte_size);
+	Span* GetOneSpan(SpanList& list, size_t size);
 private:
 	CentralCache()
 	{

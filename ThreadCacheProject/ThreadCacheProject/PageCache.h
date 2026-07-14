@@ -11,10 +11,7 @@ public:
 	}
 
 	// 获取一个K页的span
-	Span* NewSpan(size_t k)
-	{
-
-	}
+	Span* NewSpan(size_t k);
 private:
 	PageCache()
 	{
