@@ -12,6 +12,7 @@ public:
 
 	// 获取一个K页的span
 	Span* NewSpan(size_t k);
+	std::mutex _pageMtx;
 private:
 	PageCache()
 	{
@@ -21,7 +22,6 @@ private:
 	PageCache(const PageCache&) = delete;
 
 	SpanList _spanLists[NPAGES];
-	std::mutex _pageMtx;
 
 	static PageCache _sInst;
 };

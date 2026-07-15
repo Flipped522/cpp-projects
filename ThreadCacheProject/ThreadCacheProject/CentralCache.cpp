@@ -49,9 +49,16 @@ Span* CentralCache::GetOneSpan(SpanList& list, size_t size)
         }
     }
 
-    // 没有空闲的span，只能找下一层pageCache
-    Span* span = PageCache::GetInstance()->NewSpan(SizeClass::NumMovePage(size));
+    // 先把CentralCache 对应的桶锁解掉，其他线程释放内存对象回来，不会阻塞
+    list._mtx.unlock();
 
+    // 没有空闲的span，只能找下一层pageCache
+    PageCache::GetInstance()->_pageMtx.lock();
+    Span* span = PageCache::GetInstance()->NewSpan(SizeClass::NumMovePage(size));
+    PageCache::GetInstance()->_pageMtx.unlock();
+
+    // 对获取的span进行切分，其它线程拿不到这个Span，不需要加锁
+    // 
     // 计算span的大块内存的起始地址和大块内存大小的字节数
     char* start = (char*)(span->_page_Id << PAGE_SHIFT);
     size_t bytes = span->_n << PAGE_SHIFT;
@@ -68,6 +75,8 @@ Span* CentralCache::GetOneSpan(SpanList& list, size_t size)
         start += size;
     }
 
+    // 切好后需要把span挂到桶里，需要加锁
+    PageCache::GetInstance()->_pageMtx.lock();
     list.PushFront(span);
     
     return span;

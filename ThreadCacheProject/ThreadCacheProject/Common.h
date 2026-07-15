@@ -7,12 +7,18 @@
 #include <thread>
 #include <mutex>
 #include <cassert>
+#include <algorithm>
+#ifdef _WIN32
+#include <windows.h>
+#else
+// Linux
+#endif // _WIN32
 using std::cout;
 using std::endl;
 
 static const size_t MAX_BYTES = 256 * 1024;
 static const size_t NFREELISTS = 208;
-static const size_t NPAGES = 128;
+static const size_t NPAGES = 129;
 static const size_t PAGE_SHIFT = 13;
 
 #ifdef _WIN64
@@ -26,6 +32,21 @@ static const size_t PAGE_SHIFT = 13;
 static void*& NextObj(void* obj)
 {
 	return *(void**)obj;
+}
+
+inline static void* SystemAlloc(size_t kpage)
+{
+#ifdef _WIN32
+	void* ptr = VirtualAlloc(0, kpage << 13, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+#else
+	// linux下brk mmap等 
+
+#endif
+
+	if (ptr == nullptr)
+		throw std::bad_alloc();
+
+	return ptr;
 }
 
 // 管理切分好的小对象的自由链表
@@ -208,9 +229,22 @@ public:
 		return _head;
 	}
 
+	bool Empty()
+	{
+		return _head == _head->_next;
+	}
+
 	void PushFront(Span* span)
 	{
 		Insert(Begin(), span);
+	}
+
+	Span* PopFront()
+	{
+		assert(nullptr != _head->_next);
+		Span* front = _head->_next;
+		Erase(Begin());
+		return front;
 	}
 
 	void Insert(Span* pos, Span* newSpan)

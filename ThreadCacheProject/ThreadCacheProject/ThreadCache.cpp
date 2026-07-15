@@ -34,7 +34,7 @@ void* ThreadCache::FetchFromCentralCache(size_t index, size_t size)
 {
 	// 慢开始反馈调节算法
 	// 最开始不会一次向Central Cache一次批量要太多，要太多了可能用不完
-	size_t batchNum = std::min(_freeLists[index].MaxSize(), SizeClass::NumMoveSize(size));
+	size_t batchNum = min(_freeLists[index].MaxSize(), SizeClass::NumMoveSize(size));
 	if (_freeLists[index].MaxSize() == batchNum)
 	{
 		_freeLists[index].MaxSize() += 1;
