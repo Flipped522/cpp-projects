@@ -39,7 +39,7 @@ int main()
         return 2;
     }
 
-    // 3. 将解析完毕的各个文件内容，写入到output中，按照\3作为分隔符（\3不会显示）
+    // 3. 将解析完毕的各个文件内容，写入到output中，格式为：title\3content\3url \n ...[next test] 方便用getline直接获取文档全部内容
     if (!SavaHtml(results, out_put))
     {
         std::cerr << "save html error" << std::endl;
@@ -185,16 +185,37 @@ bool ParseHtml(const std::vector<std::string> &files_list, std::vector<DocInfo_t
             continue;
         }
 
-        results->push_back(doc);
+        results->push_back(std::move(doc));
 
         // fordebug
-        showDoc(doc);
-        break;
+        // showDoc(doc);
+        // break;
     }
     return true;
 }
 
 bool SavaHtml(const std::vector<DocInfo_t> &results, const std::string &out_put)
 {
+    #define SEP '\3'
+    std::ofstream out(out_put, std::ios::out | std::ios::binary);
+    if(!out.is_open())
+    {
+        std::cerr << "open " << out_put << " failed" << std::endl;
+        return false;
+    }
+
+    // 文件内容的写入
+    std::string out_string;
+    for(auto& item : results)
+    {
+        out_string += item.title;
+        out_string += SEP;
+        out_string += item.content;
+        out_string += SEP;
+        out_string += item.url;
+        out_string += '\n';
+    }
+    out.write(out_string.c_str(), out_string.size());
+    out.close();
     return true;
 }
