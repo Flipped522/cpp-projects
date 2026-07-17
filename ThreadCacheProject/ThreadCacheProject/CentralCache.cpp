@@ -27,6 +27,7 @@ size_t CentralCache::FetchRangeObj(void*& start, void*& end, size_t batchNum, si
     }
     span->_freeList = NextObj(end);
     NextObj(end) = nullptr;
+    span->_usecount += actualNum;
 
     _spanLists[index]._mtx.unlock();
 
@@ -76,7 +77,7 @@ Span* CentralCache::GetOneSpan(SpanList& list, size_t size)
     }
 
     // 切好后需要把span挂到桶里，需要加锁
-    PageCache::GetInstance()->_pageMtx.lock();
+    list._mtx.lock();
     list.PushFront(span);
     
     return span;
