@@ -6,113 +6,149 @@
 #include <unordered_map>
 #include "util.hpp"
 
-namespace ns_index{
+namespace ns_index
+{
     struct DocInfo
     {
-        std::string title; // 文档标题
+        std::string title;   // 文档标题
         std::string content; // 文档对应的去标签之后的内容
-        std::string url; // 官网文档的url
-        uint64_t doc_id;      // 文档的id
+        std::string url;     // 官网文档的url
+        uint64_t doc_id;     // 文档的id
     };
 
-    struct InvertedElem{
+    struct InvertedElem
+    {
         uint64_t doc_id;
         std::string word;
         int weight;
     };
     typedef std::vector<InvertedElem> InvertedList;
-    class Index{
-        private:
-            // 正排索引的数据结构用数组，数组下表当作文档的id
-            std::vector<DocInfo> forword_index; // 正排索引
-            // 倒排索引：一个关键字和一组InvertedElem对应
-            std::unordered_map<std::string, InvertedList> inverted_index; 
+    class Index
+    {
+    private:
+        // 正排索引的数据结构用数组，数组下表当作文档的id
+        std::vector<DocInfo> forword_index; // 正排索引
+        // 倒排索引：一个关键字和一组InvertedElem对应
+        std::unordered_map<std::string, InvertedList> inverted_index;
 
-            DocInfo* BuildForwordIndex(const std::string &line)
+        DocInfo *BuildForwordIndex(const std::string &line)
+        {
+            // 解析line，字符串切分
+            // line-> string title content url
+            const std::string sep = "\3";
+            std::vector<std::string> results;
+            ns_util::StringUtil::CutString(line, &results, sep);
+            if (3 != results.size())
             {
-                // 解析line，字符串切分
-                // line-> string title content url
-                const std::string sep = "\3";
-                std::vector<std::string> results;
-                ns_util::StringUtil::CutString(line, &results,sep);
-                if(3 != results.size())
+                return nullptr;
+            }
+            // 字符串进行填充，填充到DocInfo中
+            DocInfo doc;
+            doc.title = results[0];
+            doc.content = results[1];
+            doc.url = results[2];
+            doc.doc_id = forword_index.size(); // 先保存id,再插入
+            // 插入到正排索引的vector
+            forword_index.push_back(std::move(doc));
+            return &forword_index.back();
+        }
+
+        bool BuildInvertedIndex(const DocInfo &doc)
+        {
+            // DocInfo(title, content, url, doc_id)
+            // word -> 倒排拉链
+            struct word_cnt
+            {
+                int title_cnt;
+                int content_cnt;
+                word_cnt() : title_cnt(0), content_cnt(0)
                 {
-                    return nullptr;
                 }
-                // 字符串进行填充，填充到DocInfo中
-                DocInfo doc;
-                doc.title = results[0];
-                doc.content = results[1];
-                doc.url = results[2];
-                doc.doc_id = forword_index.size(); // 先保存id,再插入
-                // 插入到正排索引的vector
-                forword_index.push_back(std::move(doc));
-                return &forword_index.back();
+            };
+            std::unordered_map<std::string, word_cnt> word_map; // 用来暂存次词频的映射表
+            std::vector<std::string> title_words;
+            ns_util::JiebaUtil::CutString(doc.title, &title_words);
+            for (const auto s : title_words)
+            {
+                boost::to_lower(s); // 将分词转换为小写
+                word_map[s].title_cnt++;
+            }
+            std::vector<std::string> content_words;
+            ns_util::JiebaUtil::CutString(doc.content, &content_words);
+            for (const auto s : content_words)
+            {
+                boost::to_lower(s); // 将分词转换为小写
+                word_map[s].content_cnt++;
+            }
+#define X 10
+#define Y 1
+            for (auto &word_pair : word_map)
+            {
+                InvertedElem item;
+                item.doc_id = doc.doc_id;
+                item.word = word_pair.first;
+                item.weight = word_pair.second.title_cnt * X + word_pair.second.content_cnt * Y; // 相关性
+                InvertedList &inverted_list = inverted_index[word_pair.first];
+                inverted_list.push_back(item);
             }
 
-            bool BuildInvertedIndex(const DocInfo &doc)
+            return true;
+        }
+
+    public:
+        Index()
+        {
+        }
+
+        ~Index()
+        {
+        }
+
+        // 根据doc_id找到文档内容
+        DocInfo *GetForwordIndex(const uint64_t doc_id)
+        {
+            if (doc_id >= forword_index.size())
             {
-                // DocInfo(title, content, url, doc_id)
-                // word -> 倒排拉链
-                
-                return true;
+                std::cerr << "doc_id" << std::endl;
+                return nullptr;
             }
-        public:
-            Index()
-            {
+            return &forword_index[doc_id];
+        }
 
+        // 根据关键词string,获得倒排拉链
+        InvertedList *GetInvertedList(const std::string &word)
+        {
+            auto iter = inverted_index.find(word);
+            if (inverted_index.end() == iter)
+            {
+                std::cerr << word << " have no InvertedList" << std::endl;
+                return nullptr;
             }
+            return &(iter->second);
+        }
 
-            ~Index()
+        // 构建索引 parse处理完毕的数据交给这个
+        bool BuildIndex(const std::string &input)
+        {
+            std::ifstream in(input, std::ios::in | std::ios::binary);
+            if (!in.is_open())
             {
-
+                std::cerr << "sorry, " << input << "open erroe" << std::endl;
+                return false;
             }
-
-            // 根据doc_id找到文档内容
-            DocInfo* GetForwordIndex(const uint64_t doc_id)
+            std::string line;
+            while (std::getline(in, line))
             {
-                if(doc_id >= forword_index.size())
+                DocInfo *doc = BuildForwordIndex(line);
+                if (nullptr == doc)
                 {
-                    std::cerr << "doc_id" << std::endl;
-                    return nullptr;
+                    std::cerr << "build " << line << "error" << std::endl; // for debug
+                    continue;
                 }
-                return &forword_index[doc_id];
-            }
 
-            // 根据关键词string,获得倒排拉链
-            InvertedList* GetInvertedList(const std::string &word)
-            {
-                auto iter = inverted_index.find(word);
-                if(inverted_index.end() == iter)
-                {
-                    std::cerr << word << " have no InvertedList" << std::endl;
-                    return nullptr;
-                }
-                return &(iter->second);
+                BuildInvertedIndex(*doc);
             }
-
-            // 构建索引 parse处理完毕的数据交给这个
-            bool BuildIndex(const std::string &input) 
-            {
-                std::ifstream in(input, std::ios::in | std::ios::binary);
-                if(!in.is_open())
-                {
-                    std::cerr << "sorry, " << input << "open erroe" << std::endl;
-                    return false;
-                }
-                std::string line;
-                while(std::getline(in, line))
-                {
-                    DocInfo* doc = BuildForwordIndex(line);
-                    if(nullptr == doc)
-                    {
-                        std::cerr << "build " << line << "error" << std::endl;// for debug
-                        continue;              
-                    }
-
-                    BuildInvertedIndex(*doc);
-                }
-                return true;
-            }
+            return true;
+        }
     };
 }

@@ -45,7 +45,7 @@ namespace ns_util
     const char *const IDF_PATH = "./dict/idf.utf8";
     const char *const STOP_WORD_PATH = "./dict/stop_words.utf8";
 
-    class JiabaUtil
+    class JiebaUtil
     {
     private:
         static cppjieba::Jieba jieba;
@@ -56,5 +56,5 @@ namespace ns_util
             jieba.CutForSearch(src, *out);
         }
     };
-    cppjieba::Jieba JiabaUtil::jieba(DICT_PATH, HMM_PATH, USER_DICT_PATH, IDF_PATH, STOP_WORD_PATH);
+    cppjieba::Jieba JiebaUtil::jieba(DICT_PATH, HMM_PATH, USER_DICT_PATH, IDF_PATH, STOP_WORD_PATH);
 }
