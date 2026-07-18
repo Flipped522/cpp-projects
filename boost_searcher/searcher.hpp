@@ -10,8 +10,9 @@ namespace ns_searcher{
             void InitSearcher(const std::string& input)
             {
                 // 1. 获取或者创建index对象
-
+                index = ns_index::Index::GetInstance();
                 // 2. 根据index对象建立索引
+                index->BuildIndex(input);
             }
 
             // query：搜索关键字
@@ -19,7 +20,7 @@ namespace ns_searcher{
             void Search(const std::string& query, std::string *json_string)
             {
                 // 1. [分词]:对query进行按照searcher的要求进行分词
-
+                
                 // 2. [触发]:根据分词的各个“词”，进行index查找
 
                 // 3. [合并排序]:汇总查找结果，按照相关性进行(weight)降序排序

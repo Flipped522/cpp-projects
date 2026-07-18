@@ -4,6 +4,7 @@
 #include <vector>
 #include <fstream>
 #include <unordered_map>
+#include <mutex>
 #include "util.hpp"
 
 namespace ns_index
@@ -30,6 +31,17 @@ namespace ns_index
         std::vector<DocInfo> forword_index; // 正排索引
         // 倒排索引：一个关键字和一组InvertedElem对应
         std::unordered_map<std::string, InvertedList> inverted_index;
+
+        static Index *instance;
+        static std::mutex mtx;
+
+        Index()
+        {
+        }
+
+        Index(const Index &) = delete;
+
+        Index &operator=(const Index &) = delete;
 
         DocInfo *BuildForwordIndex(const std::string &line)
         {
@@ -96,12 +108,23 @@ namespace ns_index
         }
 
     public:
-        Index()
+        ~Index()
         {
         }
 
-        ~Index()
+        static Index *GetInstance()
         {
+            if (nullptr == instance)
+            {
+                mtx.lock();
+                if(nullptr == instance)
+                {
+                    instance = new Index();
+                }
+                mtx.unlock();
+            }
+
+            return instance;
         }
 
         // 根据doc_id找到文档内容
@@ -151,4 +174,5 @@ namespace ns_index
             return true;
         }
     };
+    Index *Index::instance = nullptr;
 }
