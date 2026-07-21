@@ -80,14 +80,14 @@ namespace ns_index
             std::unordered_map<std::string, word_cnt> word_map; // 用来暂存次词频的映射表
             std::vector<std::string> title_words;
             ns_util::JiebaUtil::CutString(doc.title, &title_words);
-            for (const auto s : title_words)
+            for (auto s : title_words)
             {
                 boost::to_lower(s); // 将分词转换为小写
                 word_map[s].title_cnt++;
             }
             std::vector<std::string> content_words;
             ns_util::JiebaUtil::CutString(doc.content, &content_words);
-            for (const auto s : content_words)
+            for (auto s : content_words)
             {
                 boost::to_lower(s); // 将分词转换为小写
                 word_map[s].content_cnt++;
@@ -117,7 +117,7 @@ namespace ns_index
             if (nullptr == instance)
             {
                 mtx.lock();
-                if(nullptr == instance)
+                if (nullptr == instance)
                 {
                     instance = new Index();
                 }
@@ -156,10 +156,11 @@ namespace ns_index
             std::ifstream in(input, std::ios::in | std::ios::binary);
             if (!in.is_open())
             {
-                std::cerr << "sorry, " << input << "open erroe" << std::endl;
+                std::cerr << "sorry, " << input << " open error" << std::endl;
                 return false;
             }
             std::string line;
+            int count = 0;
             while (std::getline(in, line))
             {
                 DocInfo *doc = BuildForwordIndex(line);
@@ -170,9 +171,15 @@ namespace ns_index
                 }
 
                 BuildInvertedIndex(*doc);
+                count++;
+                if (0 == count % 50)
+                {
+                    std::cout << "当前已经建立的索引文档： " << count << std::endl;
+                }
             }
             return true;
         }
     };
     Index *Index::instance = nullptr;
+    std::mutex Index::mtx;
 }
