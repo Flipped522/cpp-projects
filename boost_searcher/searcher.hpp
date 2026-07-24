@@ -56,8 +56,10 @@ namespace ns_searcher
                 Json::Value elem;
                 elem["title"] = doc->title;
                 // elem["desc"] = doc->content;
-                elem["desc"] = GetDesc(doc->content,item.word);
+                elem["desc"] = GetDesc(doc->content, item.word);
                 elem["url"] = doc->url;
+                elem["id"] = (int)item.doc_id;
+                elem["weight"] = item.weight;
 
                 root.append(elem);
             }
@@ -69,23 +71,28 @@ namespace ns_searcher
         {
             // 找到word在html_content中的首次出现，然后往后找50字节（如果没有，从begin开始），往后u找100字节（如果没有，到end即可）
             // 截取这部分内容
-            const std::size_t prev_step = 50;
-            const std::size_t next_step = 100;
+            const int prev_step = 50;
+            const int next_step = 100;
             // 1. 找到首次出现
-            std::size_t pos = html_content.find(word);
-            if(std::string::npos == pos)
-            {
+            auto iter = std::search(html_content.begin(), html_content.end(), word.begin(), word.end(), [](int x, int y)
+                                    { return (std::tolower(x) == std::tolower(y)); });
+            if(iter == html_content.end())
                 return "None";
-            }
+            
+            int pos = std::distance(html_content.begin(), iter);
 
             // 2. 获取start,end
-            std::size_t start = 0;
-            std::size_t end = html_content.size() - 1;
+            int start = 0;
+            int end = html_content.size() - 1;
             // 如果之前有50+字符，就更新开始位置
-            if(pos > prev_step)         start = pos - prev_step;
-            if(pos + next_step < end)   end = pos + next_step;
+            if (pos > start + prev_step)
+                start = pos - prev_step;
+            if (pos < end - next_step)
+                end = pos + next_step;
+
             // 3.截取子串，return
-            if(start >=  end) return "None";
+            if (start >= end)
+                return "None";
             return html_content.substr(start, end - start);
         }
 

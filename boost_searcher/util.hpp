@@ -33,7 +33,7 @@ namespace ns_util
     class StringUtil
     {
     public:
-        static void CutString(const std::string &target, std::vector<std::string> *out, const std::string &sep)
+        static void Spilt(const std::string &target, std::vector<std::string> *out, const std::string &sep)
         {
             // boost spilt
             boost::split(*out, target, boost::is_any_of(sep), boost::token_compress_on);

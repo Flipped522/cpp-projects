@@ -49,7 +49,7 @@ namespace ns_index
             // line-> string title content url
             const std::string sep = "\3";
             std::vector<std::string> results;
-            ns_util::StringUtil::CutString(line, &results, sep);
+            ns_util::StringUtil::Spilt(line, &results, sep);
             if (3 != results.size())
             {
                 return nullptr;
