@@ -29,6 +29,7 @@ void ThreadCache::Dellocate(void* ptr, size_t size)
 
 	if (_freeLists[index].Size() >= _freeLists[index].MaxSize())
 	{
+		// 当链表长度大于一次批量申请的内存时，就开始还一段list给central cache
 		ListTooLong(_freeLists[index], size);
 	}
 }
