@@ -10,6 +10,8 @@ public:
 
 	void Dellocate(void* ptr, size_t size);
 
+	void ListTooLong(FreeList& list, size_t size);
+
 	// 从中心缓存获取对象
 	void* FetchFromCentralCache(size_t index, size_t size);
 private:

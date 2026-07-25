@@ -82,3 +82,8 @@ Span* CentralCache::GetOneSpan(SpanList& list, size_t size)
     
     return span;
 }
+
+void CentralCache::ReleaseListToSpans(void* start, size_t byte_size)
+{
+
+}

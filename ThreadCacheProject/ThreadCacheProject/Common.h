@@ -53,10 +53,33 @@ inline static void* SystemAlloc(size_t kpage)
 class FreeList
 {
 public:
-	void PushRange(void* start, void* end)
+	size_t Size()
+	{
+		return _size;
+	}
+
+	void PushRange(void* start, void* end, size_t n)
 	{
 		NextObj(end) = nullptr;
 		_freeList = start;
+
+		_size += n;
+	}
+
+	void PopRange(void*& start, void*& end, size_t n)
+	{
+		assert(n <= _size);
+		start = _freeList;
+		end = start;
+
+		for (size_t i = 0; i < n - 1; ++i)
+		{
+			end = NextObj(start);
+		}
+		_freeList = NextObj(end);
+		NextObj(end) = nullptr;
+
+		_size -= n;
 	}
 
 	void Push(void* obj)
@@ -64,6 +87,8 @@ public:
 		// 头插
 		NextObj(obj) = _freeList;
 		_freeList = obj;
+
+		++_size;
 	}
 
 	void* Pop()
@@ -72,6 +97,7 @@ public:
 		// 头删
 		void* obj = _freeList;
 		_freeList = NextObj(obj);
+		--_size;
 		return obj;
 	}
 
@@ -87,6 +113,7 @@ public:
 private:
 	void* _freeList = nullptr;
 	size_t _maxSize = 1;
+	size_t _size;
 };
 
 // 计算对象大小的对齐映射规则

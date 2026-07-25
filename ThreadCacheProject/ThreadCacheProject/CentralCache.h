@@ -17,6 +17,8 @@ public:
 
 	// 获取一个非空的Span
 	Span* GetOneSpan(SpanList& list, size_t size);
+
+	void ReleaseListToSpans(void* start, size_t byte_size);
 private:
 	CentralCache()
 	{
