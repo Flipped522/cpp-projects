@@ -43,6 +43,21 @@ void TestConcurrentAlloc()
 
 }
 
+void TestAddressShift()
+{
+	PAGE_ID id1 = 2000;
+	PAGE_ID id2 = 2001;
+	char* p1 = (char*)(id1 << PAGE_SHIFT); 
+	char* p2 = (char*)(id2 << PAGE_SHIFT);
+
+
+	while (p1 < p2)
+	{
+		cout << (void*)p1 << ":" << ((PAGE_ID)p1 >> PAGE_SHIFT) << endl;
+		p1 += 8;
+	}
+}
+
 int main()
 {
 	//TLSTest();

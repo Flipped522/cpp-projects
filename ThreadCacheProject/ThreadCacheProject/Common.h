@@ -8,6 +8,7 @@
 #include <mutex>
 #include <cassert>
 #include <algorithm>
+#include <unordered_map>
 #ifdef _WIN32
 #include <windows.h>
 #else

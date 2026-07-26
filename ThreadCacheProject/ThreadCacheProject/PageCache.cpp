@@ -4,6 +4,21 @@
 
 PageCache PageCache::_sInst;
 
+Span* PageCache::MapObjectToSpan(void* obj)
+{
+	PAGE_ID id = ((PAGE_ID)obj >> PAGE_SHIFT);
+	auto ret = _idSpanMap.find(id);
+	if (_idSpanMap.end() != ret)
+	{
+		return ret->second;
+	}
+	else
+	{
+		assert(false);
+		return nullptr;
+	}
+}
+
 Span* PageCache::NewSpan(size_t k)
 {
 
@@ -33,6 +48,11 @@ Span* PageCache::NewSpan(size_t k)
 
 				_spanLists[nSpan->_n].PushFront(nSpan);
 
+				// 建立id和Span的映射，方便central cache回收小块内存时，查找对应的span
+				for (PAGE_ID i = 0; i < kSpan->_n; ++i)
+				{
+					_idSpanMap[kSpan->_page_Id + i] = kSpan;
+				}
 				return kSpan;
 			}
 		}
@@ -46,4 +66,9 @@ Span* PageCache::NewSpan(size_t k)
 	_spanLists[bigSpan->_n].PushFront(bigSpan);
 
 	return NewSpan(k);
+}
+
+void PageCache::ReleaseSpanToPageCache(Span* span)
+{
+
 }
