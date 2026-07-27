@@ -234,6 +234,8 @@ struct Span
 
 	size_t _usecount = 0; // 切好的小块内存，被分配给thread cache的计数
 	void* _freeList = nullptr;  // 切好的小块内存的自由链表
+
+	bool _isUse = false; //是否在被使用
 };
 
 // 带头双向循环链表

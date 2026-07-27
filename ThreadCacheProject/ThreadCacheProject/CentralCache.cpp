@@ -56,6 +56,7 @@ Span* CentralCache::GetOneSpan(SpanList& list, size_t size)
     // 没有空闲的span，只能找下一层pageCache
     PageCache::GetInstance()->_pageMtx.lock();
     Span* span = PageCache::GetInstance()->NewSpan(SizeClass::NumMovePage(size));
+    span->_isUse = true;
     PageCache::GetInstance()->_pageMtx.unlock();
 
     // 对获取的span进行切分，其它线程拿不到这个Span，不需要加锁

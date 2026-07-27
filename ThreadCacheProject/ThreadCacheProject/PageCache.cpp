@@ -47,6 +47,9 @@ Span* PageCache::NewSpan(size_t k)
 				nSpan->_n -= k;
 
 				_spanLists[nSpan->_n].PushFront(nSpan);
+				// 存储nSpan首尾页号和nSpan的映射，方便page cache回收内存时进行合并查找
+				_idSpanMap[nSpan->_page_Id] = nSpan;
+				_idSpanMap[nSpan->_page_Id + nSpan->_n - 1] = nSpan;
 
 				// 建立id和Span的映射，方便central cache回收小块内存时，查找对应的span
 				for (PAGE_ID i = 0; i < kSpan->_n; ++i)
@@ -70,5 +73,61 @@ Span* PageCache::NewSpan(size_t k)
 
 void PageCache::ReleaseSpanToPageCache(Span* span)
 {
+	// 对span前后的页，尝试进行合并，缓解内存碎片的问题
+	while (1)
+	{
+		PAGE_ID prevId = span->_page_Id - 1;
+		auto ret = _idSpanMap.find(prevId);
+		if (_idSpanMap.end() == ret)
+		{
+			break;
+		}
 
+		Span* prevSpan = ret->second;
+		if (true == prevSpan->_isUse)
+		{
+			break;
+		}
+
+		// 合并出超过128页的span
+		if (prevSpan->_n + span->_n > NPAGES - 1)
+		{
+			break;
+		}
+		span->_page_Id = prevSpan->_page_Id;
+		span->_n += prevSpan->_n;
+
+		_spanLists[prevSpan->_n].Erase(prevSpan);
+
+		delete prevSpan;
+	}
+
+	// 向后合并
+	while (1)
+	{
+		PAGE_ID nextId = span->_page_Id + span->_n;
+		auto ret = _idSpanMap.find(nextId);
+		if (_idSpanMap.end() == ret)
+		{
+			break;
+		}
+
+		Span* nextSpan = ret->second;
+		if (true == nextSpan->_isUse)
+		{
+			break;
+		}
+		if (nextSpan->_n + span->_n > NPAGES - 1)
+		{
+			break;
+		}
+		span->_n += nextSpan->_n;
+
+		_spanLists[nextSpan->_n].Erase(nextSpan);
+		delete nextSpan;
+	}
+	_spanLists[span->_n].PushFront(span);
+	_idSpanMap[span->_page_Id] = span;
+	_idSpanMap[span->_page_Id + span->_n - 1] = span;
+	span->_isUse = false;
 }
