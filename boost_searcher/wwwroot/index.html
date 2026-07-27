@@ -1,12 +1,101 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>for test</title>
-  </head>
-  <body>
-    <h1>你好</h1>
-    <p>这是一个httplib的测试网站</p>
-  </body>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>boost 搜索引擎</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+    }
+
+    html,
+    body{
+      height: 100%;
+    }
+
+    .container{
+      width: 800px;
+      margin: 0px auto;
+      margin-top: 15px;
+    }
+
+    .container .search{
+      width: 100%;
+      height: 52px;
+    }
+
+    .container .search input{
+      float: left;
+      width: 600px;
+      height: 50px;
+      border: 1px solid #ccc;
+      border-right: none;
+      padding-left: 10px;
+      color: #ccc;
+      font-size: 15px;
+    }
+
+    .container .search button{
+      float: left;
+      width: 150px;
+      height: 52px;
+      background-color: #4e6ef2;
+      color: #FFF;
+      font-size: 17;
+      font-family: Georgia, 'Times New Roman', Times, serif;
+    }
+
+    .container .result{
+      width: 100%;
+    }
+    .container .result .item{
+      margin-top: 15px;
+    }
+    .container .result .item a{
+      display: block;
+      text-decoration: none;
+      font-size: 20px;
+      color: #4e6ef2;
+
+
+
+
+    
+    }
+
+    .container .result .item a:hover{
+      text-decoration: underline;
+    }
+
+    .container .result .item p{
+      margin-top: 5px;
+      font-size: 16px;
+      font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
+    }
+
+    .container .result .item i{
+      display: block;
+      font-style: normal;
+      color: green;
+    }
+  </style>
+</head>
+<body>
+  <!-- <h1>hello, 欢迎来到搜索引擎</h1> -->
+  <div class="container">
+    <div class="search">
+      <input type="text" value="输入搜索关键字...">
+      <button>搜索一下</button>
+    </div>
+    <div class="result">
+      <div class="item">
+        <a href="#">这是标题</a>
+        <p>这是摘要这是摘要</p>
+        <i>------------------------------------</i>
+      </div>
+    </div>
+  </div>
+</body>
 </html>
