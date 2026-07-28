@@ -93,7 +93,9 @@ namespace ns_searcher
             // 3.截取子串，return
             if (start >= end)
                 return "None";
-            return html_content.substr(start, end - start);
+            std::string desc = html_content.substr(start, end - start);
+            desc += "...";
+            return desc;
         }
 
     private:
