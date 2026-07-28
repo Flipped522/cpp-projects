@@ -21,9 +21,18 @@ Span* PageCache::MapObjectToSpan(void* obj)
 
 Span* PageCache::NewSpan(size_t k)
 {
+	assert(k > 0);
+	if (k > NPAGES - 1)
+	{
+		void* ptr = SystemAlloc(k);
+		Span* span = new Span;
+		span->_page_Id = (PAGE_ID)ptr >> PAGE_SHIFT;
+		span->_n = k;
 
-	assert(k > 0 && k < NPAGES);
-
+		_idSpanMap[span->_page_Id] = span;
+	
+		return span;
+	}
 
 	if(!_spanLists[k].Empty())
 	{
@@ -73,6 +82,16 @@ Span* PageCache::NewSpan(size_t k)
 
 void PageCache::ReleaseSpanToPageCache(Span* span)
 {
+	// 大于128页 page直接向堆申请
+	if (span->_n > NPAGES - 1)
+	{
+		void* ptr = (void*)(span->_page_Id << PAGE_SHIFT);
+		SystemFree(ptr);
+		delete span;
+
+		return;
+	}
+
 	// 对span前后的页，尝试进行合并，缓解内存碎片的问题
 	while (1)
 	{

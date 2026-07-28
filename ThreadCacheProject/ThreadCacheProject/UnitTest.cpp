@@ -27,7 +27,7 @@ void TLSTest()
 	t2.join();
 }
 
-void TestConcurrentAlloc()
+void TestConcurrentAlloc1()
 {
 	void* p1 = ConcurrentAlloc(6);
 	void* p2 = ConcurrentAlloc(8);
@@ -41,6 +41,11 @@ void TestConcurrentAlloc()
 	cout << p4 << endl;
 	cout << p5 << endl;
 
+	ConcurrentFree(p1, 6);
+	ConcurrentFree(p2, 8);
+	ConcurrentFree(p3, 1);
+	ConcurrentFree(p4, 7);
+	ConcurrentFree(p5, 8);
 }
 
 void TestAddressShift()
@@ -58,11 +63,72 @@ void TestAddressShift()
 	}
 }
 
+void TestConcurrentAlloc2()
+{
+	for (size_t i = 0; i < 5; ++i)
+	{
+		void* p1 = ConcurrentAlloc(6);
+		cout << p1 << endl;
+	}
+	
+}
+
+void MultiThreadAlloc1()
+{
+	std::vector<void*> v;
+	for (size_t i = 0; i < 5; ++i)
+	{
+		void* ptr = ConcurrentAlloc(6);
+		v.push_back(ptr);
+	}
+
+	for (auto e : v)
+	{
+		ConcurrentFree(e, 6);
+	}
+}
+
+void MultiThreadAlloc2()
+{
+	std::vector<void*> v;
+	for (size_t i = 0; i < 5; ++i)
+	{
+		void* ptr = ConcurrentAlloc(6);
+		v.push_back(ptr);
+	}
+
+	for (auto e : v)
+	{
+		ConcurrentFree(e, 6);
+	}
+}
+
+void TestMultiThread()
+{
+	std::thread t1(MultiThreadAlloc1);
+
+	std::thread t2(MultiThreadAlloc2);
+	t1.join();
+	t2.join();
+}
+
+void BigAlloc()
+{
+	void* p1 = ConcurrentAlloc(257 * 1024);
+	ConcurrentFree(p1, 257 * 1024);
+
+	void* p2 = ConcurrentAlloc(129 * 8 * 1024);
+	ConcurrentFree(p2, 129 * 8 * 1024);
+}
+
 int main()
 {
 	//TLSTest();
 	//cout << sizeof(PAGE_ID) << endl;
-	TestConcurrentAlloc();
+	//TestConcurrentAlloc1();
+
+	//TestMultiThread();
+	BigAlloc();
 
 	return 0;
 }

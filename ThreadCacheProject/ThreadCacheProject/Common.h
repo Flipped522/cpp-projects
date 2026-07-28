@@ -50,6 +50,16 @@ inline static void* SystemAlloc(size_t kpage)
 	return ptr;
 }
 
+inline static void SystemFree(void* ptr)
+{
+#ifdef  _WIN32
+	VirtualFree(ptr, 0, MEM_RELEASE);
+#else
+	// sbrk ...
+#endif
+
+}
+
 // 管理切分好的小对象的自由链表
 class FreeList
 {
@@ -114,7 +124,7 @@ public:
 private:
 	void* _freeList = nullptr;
 	size_t _maxSize = 1;
-	size_t _size;
+	size_t _size = 0;
 };
 
 // 计算对象大小的对齐映射规则
@@ -156,8 +166,7 @@ public:
 		}
 		else
 		{
-			assert(false);
-			return -1;
+			return _RoundUp(size, 1 << PAGE_SHIFT);
 		}
 	}
 
