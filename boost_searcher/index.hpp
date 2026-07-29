@@ -6,6 +6,7 @@
 #include <unordered_map>
 #include <mutex>
 #include "util.hpp"
+#include "log.hpp"
 
 namespace ns_index
 {
@@ -174,7 +175,8 @@ namespace ns_index
                 count++;
                 if (0 == count % 50)
                 {
-                    std::cout << "当前已经建立的索引文档： " << count << std::endl;
+                    // std::cout << "当前已经建立的索引文档： " << count << std::endl;
+                    LOG(NORMAL, "当前已经建立的索引文档：" + std::to_string(count));
                 }
             }
             return true;

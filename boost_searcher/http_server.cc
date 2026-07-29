@@ -19,10 +19,12 @@ int main()
             return;
         }
         std::string word = req.get_param_value("word");
-        std::cout << "用户在搜索： " << word << std::endl;
+        // std::cout << "用户在搜索： " << word << std::endl;
+        LOG(NORMAL, "用户搜索的： " + word);
         std::string json_string;
         search.Search(word, &json_string);
         rsp.set_content(json_string.c_str(), "application/json"); });
+    LOG(NORMAL, "服务器启动成功...");
     svr.listen("0.0.0.0", 8081);
     return 0;
 }

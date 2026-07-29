@@ -1,3 +1,4 @@
+#pragma once
 #include "index.hpp"
 #include "util.hpp"
 #include "algorithm"
@@ -5,6 +6,14 @@
 
 namespace ns_searcher
 {
+    struct InvertedElemPrint
+    {
+        uint64_t doc_id;
+        int weight;
+        std::vector<std::string> words;
+        InvertedElemPrint() : doc_id(0), weight(0) {}
+    };
+
     class Searcher
     {
     public:
@@ -15,10 +24,12 @@ namespace ns_searcher
         {
             // 1. 获取或者创建index对象
             index = ns_index::Index::GetInstance();
-            std::cout << "获取index单例成功" << std::endl;
+            // std::cout << "获取index单例成功" << std::endl;
+            LOG(NORMAL, "获取index单例成功...");
             // 2. 根据index对象建立索引
             index->BuildIndex(input);
-            std::cout << "建立正排和倒排索引成功" << std::endl;
+            // std::cout << "建立正排和倒排索引成功" << std::endl;
+            LOG(NORMAL, "建立正排和倒排索引成功...");
         }
 
         // query：搜索关键字
@@ -29,7 +40,11 @@ namespace ns_searcher
             std::vector<std::string> words;
             ns_util::JiebaUtil::CutString(query, &words);
             // 2. [触发]:根据分词的各个“词”，进行index查找,建立索引的值忽略大小写
-            ns_index::InvertedList inverted_list_all;
+            // ns_index::InvertedList inverted_list_all;
+            std::vector<InvertedElemPrint> inverted_list_all;
+
+            std::unordered_map<uint64_t, InvertedElemPrint> tokens_map;
+
             for (std::string word : words)
             {
                 boost::to_lower(word);
@@ -38,12 +53,31 @@ namespace ns_searcher
                 {
                     continue;
                 }
-                inverted_list_all.insert(inverted_list_all.end(),
-                                         inverted_list->begin(), inverted_list->end());
+                // inverted_list_all.insert(inverted_list_all.end(),
+                //  inverted_list->begin(), inverted_list->end());
+                for (const auto &elem : *inverted_list)
+                {
+                    auto &item = tokens_map[elem.doc_id];
+                    // item 一定是doc_id相同的print节点
+                    item.doc_id = elem.doc_id;
+                    item.weight += elem.weight;
+                    item.words.push_back(elem.word);
+                }
             }
+            for (const auto &item : tokens_map)
+            {
+                inverted_list_all.push_back(std::move(item.second));
+            }
+
             // 3. [合并排序]:汇总查找结果，按照相关性进行(weight)降序排序
-            sort(inverted_list_all.begin(), inverted_list_all.end(), [](const ns_index::InvertedElem &e1, const ns_index::InvertedElem &e2)
-                 { return e1.weight > e2.weight; });
+            // sort(inverted_list_all.begin(), inverted_list_all.end(), [](const ns_index::InvertedElem &e1, const ns_index::InvertedElem &e2)
+            //      { return e1.weight > e2.weight; });
+
+            sort(inverted_list_all.begin(), inverted_list_all.end(),
+                 [](const InvertedElemPrint &e1, const InvertedElemPrint &e2)
+                 {
+                     return e1.weight > e2.weight;
+                 });
             // 4. [构建]：根据查找出来的结果，构建json串 --jsoncpp
             Json::Value root;
             for (auto &item : inverted_list_all)
@@ -56,14 +90,14 @@ namespace ns_searcher
                 Json::Value elem;
                 elem["title"] = doc->title;
                 // elem["desc"] = doc->content;
-                elem["desc"] = GetDesc(doc->content, item.word);
+                elem["desc"] = GetDesc(doc->content, item.words[0]);
                 elem["url"] = doc->url;
-                elem["id"] = (int)item.doc_id;
-                elem["weight"] = item.weight;
+                // elem["id"] = (int)item.doc_id;
+                // elem["weight"] = item.weight;
 
                 root.append(elem);
             }
-            Json::StyledWriter writer;
+            Json::FastWriter writer;
             *json_string = writer.write(root);
         }
 
@@ -76,9 +110,9 @@ namespace ns_searcher
             // 1. 找到首次出现
             auto iter = std::search(html_content.begin(), html_content.end(), word.begin(), word.end(), [](int x, int y)
                                     { return (std::tolower(x) == std::tolower(y)); });
-            if(iter == html_content.end())
+            if (iter == html_content.end())
                 return "None";
-            
+
             int pos = std::distance(html_content.begin(), iter);
 
             // 2. 获取start,end
