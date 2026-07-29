@@ -1,6 +1,7 @@
 #define _CRT_SECURE_NO_WARNINGS 1 
 
 #include "Common.h"
+#include "ObjectPool.h"
 
 class PageCache
 {
@@ -28,6 +29,6 @@ private:
 
 	SpanList _spanLists[NPAGES];
 	std::unordered_map<PAGE_ID, Span*> _idSpanMap;
-	
+	ObjectPool<Span> _spanPool;
 	static PageCache _sInst;
 };

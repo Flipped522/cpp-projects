@@ -4,6 +4,7 @@
 #include "Common.h"
 #include "ThreadCache.h"
 #include "PageCache.h"
+#include "ObjectPool.h"
 
 static void* ConcurrentAlloc(size_t size)
 {
@@ -14,6 +15,7 @@ static void* ConcurrentAlloc(size_t size)
 
 		PageCache::GetInstance()->_pageMtx.lock();
 		Span* span = PageCache::GetInstance()->NewSpan(kpage);
+		span->_objSize = size;
 		PageCache::GetInstance()->_pageMtx.unlock();
 
 		void* ptr = (void*)(span->_page_Id << PAGE_SHIFT);
@@ -24,7 +26,9 @@ static void* ConcurrentAlloc(size_t size)
 		// 通过TLS 每个线程无锁的获取自己的专属的ThreadCache
 		if (nullptr == pTLSThreadCache)
 		{
-			pTLSThreadCache = new ThreadCache;
+			static ObjectPool<ThreadCache> tcPool;
+			//pTLSThreadCache = new ThreadCache;
+			pTLSThreadCache = tcPool.New();
 		}
 		cout << std::this_thread::get_id() << ":" << pTLSThreadCache << endl;
 
@@ -33,8 +37,10 @@ static void* ConcurrentAlloc(size_t size)
 
 }
 
-static void ConcurrentFree(void* ptr, size_t size)
+static void ConcurrentFree(void* ptr)
 {
+	Span* span = PageCache::GetInstance()->MapObjectToSpan(ptr);
+	size_t size = span->_objSize;
 	if (size > MAX_BYTES)
 	{
 		Span* span = PageCache::GetInstance()->MapObjectToSpan(ptr);

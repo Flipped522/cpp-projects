@@ -7,6 +7,8 @@ PageCache PageCache::_sInst;
 Span* PageCache::MapObjectToSpan(void* obj)
 {
 	PAGE_ID id = ((PAGE_ID)obj >> PAGE_SHIFT);
+	std::unique_lock<std::mutex> lock(_pageMtx);
+
 	auto ret = _idSpanMap.find(id);
 	if (_idSpanMap.end() != ret)
 	{
@@ -25,7 +27,8 @@ Span* PageCache::NewSpan(size_t k)
 	if (k > NPAGES - 1)
 	{
 		void* ptr = SystemAlloc(k);
-		Span* span = new Span;
+		//Span* span = new Span;
+		Span* span = _spanPool.New();
 		span->_page_Id = (PAGE_ID)ptr >> PAGE_SHIFT;
 		span->_n = k;
 
@@ -46,7 +49,7 @@ Span* PageCache::NewSpan(size_t k)
 			if (!_spanLists[i].Empty())
 			{
 				Span* nSpan = _spanLists[i].PopFront();
-				Span* kSpan = new Span;
+				Span* kSpan = _spanPool.New();
 				// 在nSpan的头部切一个k页下来
 				// k页的span返回，nSpan挂到对应的位置
 				kSpan->_page_Id = nSpan->_page_Id;
@@ -71,7 +74,7 @@ Span* PageCache::NewSpan(size_t k)
 	}
 	// 到这里说明没有大页span
 	// 找堆去要一个128页的span
-	Span* bigSpan = new Span;
+	Span* bigSpan = _spanPool.New();
 	void* ptr = SystemAlloc(NPAGES - 1);
 	bigSpan->_page_Id = (PAGE_ID)ptr >> PAGE_SHIFT;
 	bigSpan->_n = NPAGES - 1;
@@ -87,8 +90,8 @@ void PageCache::ReleaseSpanToPageCache(Span* span)
 	{
 		void* ptr = (void*)(span->_page_Id << PAGE_SHIFT);
 		SystemFree(ptr);
-		delete span;
-
+		//delete span;
+		_spanPool.Delete(span);
 		return;
 	}
 
@@ -118,7 +121,8 @@ void PageCache::ReleaseSpanToPageCache(Span* span)
 
 		_spanLists[prevSpan->_n].Erase(prevSpan);
 
-		delete prevSpan;
+		//delete prevSpan;
+		_spanPool.Delete(prevSpan);
 	}
 
 	// 向后合并
@@ -143,7 +147,8 @@ void PageCache::ReleaseSpanToPageCache(Span* span)
 		span->_n += nextSpan->_n;
 
 		_spanLists[nextSpan->_n].Erase(nextSpan);
-		delete nextSpan;
+		//delete nextSpan;
+		_spanPool.Delete(nextSpan);
 	}
 	_spanLists[span->_n].PushFront(span);
 	_idSpanMap[span->_page_Id] = span;
