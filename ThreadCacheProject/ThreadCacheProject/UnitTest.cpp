@@ -121,14 +121,14 @@ void BigAlloc()
 	ConcurrentFree(p2);
 }
 
-int main()
-{
-	//TLSTest();
-	//cout << sizeof(PAGE_ID) << endl;
-	TestConcurrentAlloc1();
-
-	//TestMultiThread();
-	//BigAlloc();
-
-	return 0;
-}
+//int main()
+//{
+//	//TLSTest();
+//	//cout << sizeof(PAGE_ID) << endl;
+//	TestConcurrentAlloc1();
+//
+//	//TestMultiThread();
+//	//BigAlloc();
+//
+//	return 0;
+//}
