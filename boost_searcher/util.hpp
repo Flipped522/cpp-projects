@@ -6,6 +6,7 @@
 #include <fstream>
 #include <boost/algorithm/string.hpp>
 #include "./cppjieba/Jieba.hpp"
+#include "log.hpp"
 
 namespace ns_util
 {
@@ -48,13 +49,69 @@ namespace ns_util
     class JiebaUtil
     {
     private:
-        static cppjieba::Jieba jieba;
+        // static cppjieba::Jieba jieba;
+        cppjieba::Jieba jieba;
+        std::unordered_map<std::string, bool> stop_words;
+        JiebaUtil():jieba(DICT_PATH, HMM_PATH, USER_DICT_PATH, IDF_PATH, STOP_WORD_PATH)
+        {}
+        JiebaUtil(const JiebaUtil& ) = delete;
 
+        static JiebaUtil *instance;
+    public:
+        static JiebaUtil* get_instance()
+        {
+            static std::mutex mtx;
+            if(nullptr == instance)
+            {
+                mtx.lock();
+                if(nullptr == instance)
+                {
+                    instance = new JiebaUtil();
+                    instance->InitJiebaUtil();
+                }
+                mtx.unlock();
+            }
+            return instance;
+        }
+        void InitJiebaUtil()
+        {
+            std::ifstream in(STOP_WORD_PATH);
+            if(!in.is_open())
+            {
+                LOG(FATAL, "load stop words file error");
+                return;
+            }
+            std::string line;
+            while(std::getline(in, line))
+            {
+                stop_words.insert({line, true});
+            }
+            in.close();
+        }
+        void CutStringHelper(const std::string &src, std::vector<std::string> *out)
+        {
+            jieba.CutForSearch(src, *out);
+            for(auto iter = out->begin(); out->end() != iter;)
+            {
+                auto it = stop_words.find(*iter);
+                if(stop_words.end() != it)
+                {
+                    // 说明当前的string是暂停词，需要去掉
+                    iter = out->erase(iter);
+                }
+                else
+                {
+                    ++iter;
+                }
+            }
+        }
     public:
         static void CutString(const std::string &src, std::vector<std::string> *out)
         {
-            jieba.CutForSearch(src, *out);
+            // jieba.CutForSearch(src, *out);
+            ns_util::JiebaUtil::get_instance()->CutStringHelper(src, out);
         }
     };
-    cppjieba::Jieba JiebaUtil::jieba(DICT_PATH, HMM_PATH, USER_DICT_PATH, IDF_PATH, STOP_WORD_PATH);
+    // cppjieba::Jieba JiebaUtil::jieba(DICT_PATH, HMM_PATH, USER_DICT_PATH, IDF_PATH, STOP_WORD_PATH);
+    JiebaUtil* JiebaUtil::instance = nullptr;
 }

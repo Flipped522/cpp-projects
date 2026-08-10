@@ -173,11 +173,11 @@ namespace ns_index
 
                 BuildInvertedIndex(*doc);
                 count++;
-                if (0 == count % 50)
-                {
-                    // std::cout << "当前已经建立的索引文档： " << count << std::endl;
-                    LOG(NORMAL, "当前已经建立的索引文档：" + std::to_string(count));
-                }
+                // if (0 == count % 50)
+                // {
+                // std::cout << "当前已经建立的索引文档： " << count << std::endl;
+                LOG(NORMAL, "当前已经建立的索引文档：" + std::to_string(count));
+                // }
             }
             return true;
         }

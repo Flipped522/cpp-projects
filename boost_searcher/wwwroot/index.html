@@ -26,8 +26,7 @@
         padding: 55px 20px;
         overflow-x: hidden;
         color: #303846;
-        font-family:
-          "Microsoft YaHei", "PingFang SC", Arial, sans-serif;
+        font-family: "Microsoft YaHei", "PingFang SC", Arial, sans-serif;
         background:
           radial-gradient(
             circle at 15% 10%,
@@ -620,6 +619,9 @@
 
       function Search() {
         let query = $(".container .search input").val();
+        if ("" == query || null == query) {
+          return;
+        }
         console.log("query = " + query);
 
         // 发起 HTTP 请求
@@ -634,6 +636,10 @@
       }
 
       function BuildHtml(data) {
+        if ("" == data || null == data) {
+          alert("搜索的内容不存在");
+          return;
+        }
         let result_label = $(".container .result");
         result_label.empty();
 
@@ -691,8 +697,7 @@
         );
 
         $(".container .result .item").each(function (index) {
-          this.style.transitionDelay =
-            Math.min(index * 50, 250) + "ms";
+          this.style.transitionDelay = Math.min(index * 50, 250) + "ms";
 
           resultObserver.observe(this);
         });
