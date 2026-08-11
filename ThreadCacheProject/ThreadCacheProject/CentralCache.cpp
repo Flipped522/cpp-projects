@@ -77,6 +77,8 @@ Span* CentralCache::GetOneSpan(SpanList& list, size_t size)
         tail = start;
         start += size;
     }
+    NextObj(tail) = nullptr;
+
 
     // 切好后需要把span挂到桶里，需要加锁
     list._mtx.lock();

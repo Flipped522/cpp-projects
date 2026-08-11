@@ -39,7 +39,12 @@ Span* PageCache::NewSpan(size_t k)
 
 	if(!_spanLists[k].Empty())
 	{
-		return _spanLists->PopFront();
+		Span* kSpan = _spanLists[k].PopFront();
+		for (PAGE_ID i = 0; i < kSpan->_n; ++i)
+		{
+			_idSpanMap[kSpan->_page_Id + i] = kSpan;
+		}
+		return kSpan;
 	}
 	else
 	{

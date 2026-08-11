@@ -74,6 +74,8 @@ public:
 		NextObj(end) = nullptr;
 		_freeList = start;
 
+
+
 		_size += n;
 	}
 
@@ -85,7 +87,7 @@ public:
 
 		for (size_t i = 0; i < n - 1; ++i)
 		{
-			end = NextObj(start);
+			end = NextObj(end);
 		}
 		_freeList = NextObj(end);
 		NextObj(end) = nullptr;
@@ -303,6 +305,10 @@ public:
 	{
 		assert(nullptr != pos);
 		assert(_head != pos);
+		if (pos == _head)
+		{
+			int x = 0;
+		}
 
 		Span* prev = pos->_prev;
 		Span* next = pos->_next;
