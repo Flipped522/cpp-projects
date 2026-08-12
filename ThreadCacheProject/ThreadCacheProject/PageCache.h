@@ -2,6 +2,7 @@
 
 #include "Common.h"
 #include "ObjectPool.h"
+#include "PageMap.h"
 
 class PageCache
 {
@@ -28,7 +29,8 @@ private:
 	PageCache(const PageCache&) = delete;
 
 	SpanList _spanLists[NPAGES];
-	std::unordered_map<PAGE_ID, Span*> _idSpanMap;
+	//std::unordered_map<PAGE_ID, Span*> _idSpanMap;
+	TCMalloc_PageMap1<32 - PAGE_SHIFT> _idSpanMap;
 	ObjectPool<Span> _spanPool;
 	static PageCache _sInst;
 };
