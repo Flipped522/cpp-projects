@@ -1,4 +1,5 @@
 #include "searcher.hpp"
+#include "UserManager.hpp"
 #include "cpphttplib/httplib.h"
 
 const std::string input = "data/raw_html/raw.txt";
@@ -6,11 +7,38 @@ const std::string root_path = "./wwwroot";
 
 int main()
 {
+    UserManager user_manager(
+        "127.0.0.1",
+        "root",
+        "123456",
+        "boost_searcher",
+        3306);
+
     ns_searcher::Searcher search;
     search.InitSearcher(input);
 
     httplib::Server svr;
+
     svr.set_base_dir(root_path.c_str());
+
+    svr.Post("/register", [&user_manager](const httplib::Request &req, httplib::Response &rsp)
+             {
+    std::string username = req.get_param_value("username");
+    std::string password = req.get_param_value("password");
+
+    std::string result = user_manager.Register(username, password);
+
+    rsp.set_content(result, "text/plain; charset=utf-8"); });
+
+    svr.Post("/login", [&user_manager](const httplib::Request &req, httplib::Response &rsp)
+             {
+    std::string username = req.get_param_value("username");
+    std::string password = req.get_param_value("password");
+
+    std::string result = user_manager.Login(username, password);
+
+    rsp.set_content(result, "text/plain; charset=utf-8"); });
+
     svr.Get("/s", [&search](const httplib::Request &req, httplib::Response &rsp)
             {
         if(!req.has_param("word"))
